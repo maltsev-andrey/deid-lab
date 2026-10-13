@@ -1,0 +1,7 @@
+name: deid
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+# Python packages: pip install -r requirements.txt (after conda activate deid)

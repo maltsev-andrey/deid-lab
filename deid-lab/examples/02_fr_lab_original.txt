@@ -1,0 +1,23 @@
+Hôpital de Neuchâtel
+Laboratoire central
+
+RAPPORT DE LABORATOIRE
+Prescripteur: Dr Camille Mercier, 1400 Yverdon-les-Bains
+Nom: VIENNE Luca, 15.08.1969, M
+N° patient: 16828262
+Prélèvement: 20 juillet 2026 07:16    Réception: 20 juillet 2026 12:23
+
+Paramètre       Valeur  Unité   (Référence)
+Hémoglobine        126 g/L     (120-160)
+Leucocytes         8.8 G/L     (3.5-10.0)
+Thrombocytes       286 G/L     (150-400)
+Créatinine         162 umol/L  (59-104)
+CRP                 23 mg/L    (< 5)
+HbA1c              5.6 %       (< 5.7)
+TSH                4.5 mU/L    (0.27-4.2)
+Sodium             141 mmol/L  (135-145)
+Potassium          3.2 mmol/L  (3.5-5.1)
+
+Commentaire: Échantillon hémolysé. Luca sera reconvoqué.
+
+Validé par: Pierre Treboux, 31 juillet 2026

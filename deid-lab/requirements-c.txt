@@ -1,0 +1,7 @@
+# Pipeline C (GLiNER PII model) and D. CPU-only torch: install it first from the PyTorch
+# CPU index, otherwise pip pulls the CUDA build (several GB):
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements-c.txt
+gliner>=0.2.13
+transformers>=4.40,<5
+huggingface_hub>=0.23

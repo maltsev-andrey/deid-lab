@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+# generated artefacts, reproducible with the scripts
+data/
+runs/
+# never commit real client data
+data/real/

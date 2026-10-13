@@ -1,0 +1,45 @@
+<ORGANIZATION_1>
+Klinik für Innere Medizin
+
+Austrittsbericht vom <DATE_1>
+
+Patient: <PERSON_1>, geb. <DATE_2>
+AHV-Nr.: <AHV_NUMBER_1>
+Adresse: <STREET_ADDRESS_1>, <LOCATION_1>
+Telefon: <PHONE_1>, mobil <PHONE_2>
+E-Mail: <EMAIL_1>
+Versichertenkarte: <INSURANCE_CARD_1> (<LOCATION_2>)
+PID <PATIENT_ID_1> / Fall-Nr. <PATIENT_ID_2>
+
+Sehr geehrte Frau Kollegin, sehr geehrter Herr Kollege
+
+Wir berichten über <PERSON_1>, geb. <DATE_2>, hospitalisiert vom <DATE_3> bis <DATE_1>.
+
+Diagnosen:
+1. Morbus Crohn (K50.9)
+2. Hashimoto-Thyreoiditis (E06.3)
+
+Anamnese:
+Bei Frau <PERSON_1> ist seit <DATE_4> ein Morbus Crohn bekannt. Zuweisung durch Dr. med. <PERSON_2>.
+
+Verlauf:
+Unter Therapie besserte sich der Zustand rasch. Visite durch Dr. med. <PERSON_3> am <DATE_5>.
+
+Medikation bei Austritt:
+- Atorvastatin 20 mg 0-0-1
+- Torasemid 10 mg 1-0-0
+- Dafalgan 1 g max. 4x/24h
+
+Procedere:
+Kontrolle beim Hausarzt Dr. med. <PERSON_2> in <LOCATION_3> in zwei Wochen.
+Notfallkontakt: <PERSON_4> <PHONE_3>)
+
+Freundliche Grüsse
+
+Dr. med. <PERSON_5>
+Oberarzt Innere Medizin
+
+<PERSON_3>
+Assistenzarzt
+
+Kopie an: Dr. med. <PERSON_2>, <STREET_ADDRESS_2>, <LOCATION_4>

@@ -1,0 +1,23 @@
+<ORGANIZATION_1>
+Laboratoire central
+
+RAPPORT DE LABORATOIRE
+Prescripteur: Dr <PERSON_1>, <LOCATION_1>
+Nom: <PERSON_2>, <DATE_1>, M
+N° patient: <PATIENT_ID_1>
+Prélèvement: <DATE_2> 07:16    Réception: <DATE_2> 12:23
+
+Paramètre       Valeur  Unité   (Référence)
+Hémoglobine        126 g/L     (120-160)
+Leucocytes         8.8 G/L     (3.5-10.0)
+Thrombocytes       286 G/L     (150-400)
+Créatinine         162 umol/L  (59-104)
+CRP                 23 mg/L    (< 5)
+HbA1c              5.6 %       (< 5.7)
+TSH                4.5 mU/L    (0.27-4.2)
+Sodium             141 mmol/L  (135-145)
+Potassium          3.2 mmol/L  (3.5-5.1)
+
+Commentaire: Échantillon hémolysé. <PERSON_2> sera reconvoqué.
+
+Validé par: <PERSON_3>, <DATE_3>

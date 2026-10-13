@@ -1,0 +1,24 @@
+Dr. med. <PERSON_1>
+<PERSON_2> in medicina interna generale
+<STREET_ADDRESS_1>
+<LOCATION_1>
+Tel. <PHONE_1>
+
+<LOCATION_2>, <DATE_1>
+
+A: <ORGANIZATION_1>, Policlinico medico
+
+Richiesta di consulenza
+Concerne: Sig. <PERSON_3>, nato il <DATE_2>
+<STREET_ADDRESS_2>, <LOCATION_3>
+AVS <AHV_NUMBER_1>
+
+Cari Colleghi,
+
+Vi chiedo una valutazione per il signor <PERSON_3>, affetto da fibrillazione atriale.
+<PERSON_3> desidera ricevere la corrispondenza via e-mail: <EMAIL_1>.
+Terapia attuale: Levothyroxin 75 mcg 1-0-0, Dafalgan 1 g max. 4x/24h.
+Assicurazione: Visana, tessera <INSURANCE_CARD_1>
+
+Ringraziando, porgo cordiali saluti
+<PERSON_1>
