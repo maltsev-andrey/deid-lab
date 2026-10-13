@@ -105,7 +105,7 @@ CITY_TOKEN = rf"[{UC}][{LC}\.]*(?:-[{UC}{LC}][{LC}\.]*)*"      # "Yverdon-les-Ba
 
 STREET_SUFFIX = (r"straße|strasse|strße|str\.|gasse|weg|platz|allee|ring|damm|ufer|pfad|steig|promenade|"
                  r"chaussee|markt|hof|berg|tal|graben|zeile|landstraße|rain|halde|bühl|matte")
-STREET_NAME = rf"(?:[{UC}][{LC}]+(?:er|e|sche)[ ])?(?:[{UC}][\w\-]*(?i:{STREET_SUFFIX})|(?i:Straße|Strasse|Str\.|Gasse|Weg|Platz|Allee))\.?"
+STREET_NAME = rf"(?:[{UC}][{LC}]{{1,10}}(?:er|e|sche)[ ])?(?:[{UC}][\w\-]*(?i:{STREET_SUFFIX})|(?i:Straße|Strasse|Str\.|Gasse|Weg|Platz|Allee))\.?"
 
 PHONE_KEY = r"(?:Tel(?:efon|efax|\.)?|Fax|Handy|Mobil(?:e|tel)?|Durchwahl|DW|Info|Sekretariat|Telefono|Cellulare|Tél(?:éphone)?|Portable)"
 PHONE_BODY = r"(?:\+\d{2,3} ?)?(?:\(0?\d{1,5}\) ?)?\d[\d /().\-]{5,}\d(?: ?- ?DW)?"
@@ -224,7 +224,7 @@ RULES = [
     # honorific + lone initial: "Herr V.", "Frau W."
     ("PERSON", re.compile(rf"\b(?:Herrn?|Frau|Hr\.|Fr\.)\s(?P<v>[{UC}]\.)(?!\s?[{UC}{LC}])"), 0.8, None),
     # field label + name: "Patient: Schwab Vivien", "Betrifft: Tupolev, Konstantin"
-    ("PERSON", re.compile(rf"\b{FIELD_LABELS_PERSON}\s?:?\s*(?P<v>{PERSON_NAME}(?:,\s{NAME_TOKEN}(?:-{NAME_TOKEN})?)?)"), 0.85, None),
+    ("PERSON", re.compile(rf"\b{FIELD_LABELS_PERSON}(?:[ \t]*:[ \t]*|[ \t]+)(?P<v>{PERSON_NAME}(?:,\s{NAME_TOKEN}(?:-{NAME_TOKEN})?)?)"), 0.85, None),
     # surname-first with comma after a person context: "Patientin Haefner, Heinz", "über Frau CHRIST, Charlotte"
     ("PERSON", re.compile(
         rf"\b(?:Patient(?:en|in)?|Frau|Herrn?|Betrifft:?|Betr\.?:?)\s(?P<v>(?:{CAPS_TOKEN}|{NAME_TOKEN}),\s{NAME_TOKEN}(?:-{NAME_TOKEN})?)"), 0.85, None),
@@ -239,6 +239,9 @@ RULES = [
     # "Andrea Ilgner,  21.10.1982", "Irina Popovic, geb. am 17.08.1958"
     ("PERSON", re.compile(
         rf"(?<![\w.])(?P<v>{NAME_TOKEN}(?:[ ](?:(?:von|van|de|zur|zu)[ ])?{NAME_TOKEN}){{1,2}}),?[ ]{{1,3}}(?:\*|geb\.(?:\sam)?|geboren(?:\sam)?)?[ ]?(?={DAY}\.{MON}\.\d{{2}})"), 0.85, None),
+    # "Weil, Klementine, geb. 16.01.1993" at line start, no trigger word
+    ("PERSON", re.compile(
+        rf"(?m)^[ \t]*(?P<v>(?:{CAPS_TOKEN}|{NAME_TOKEN}),\s{NAME_TOKEN}(?:-{NAME_TOKEN})?)(?=,?\s*(?:\*|geb\.|geboren|né[e]?\sle|nat[oa]\sil))"), 0.85, None),
     # signature line with role in parentheses or title after the name: "Kevin Schlauberger (Stationsarzt)", "Ida Fuß, Dr. med."
     ("PERSON", re.compile(
         rf"(?m)^[ \t]*(?P<v>{NAME_TOKEN}(?:[ ]{NAME_TOKEN}){{1,2}})(?:\s\((?:{ROLE_LINE})\)|,\s(?:{HONORIFIC_SEQ}))"), 0.8, None),

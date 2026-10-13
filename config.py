@@ -38,7 +38,12 @@ AI4PRIVACY_PER_LANG = 500      # sampled texts per language from the validation 
 # --- Pipelines ---------------------------------------------------------------
 # "<base>_pp" = base pipeline + document-level post-processing
 # (deny list, propagation of found values, person linking). See deidlab/postprocess.py
+# Stage 2 adds C_gliner (transformer PII model) and D_union (B + C). Both need torch + gliner
+# (requirements-c.txt); the default list runs without them. Override per run:
+#   DEID_PIPELINES=B_presidio_pp,C_gliner,C_gliner_pp,D_union_pp ./run_eval.sh
 PIPELINES = ["A_regex", "A_regex_pp", "B_presidio", "B_presidio_pp"]
+if os.environ.get("DEID_PIPELINES"):
+    PIPELINES = [p.strip() for p in os.environ["DEID_PIPELINES"].split(",") if p.strip()]
 
 # spaCy models used by pipeline B. "lg" gives the best NER on CPU.
 # Swap to *_md for faster runs on small VMs (lower recall on PERSON/LOCATION).
@@ -48,6 +53,32 @@ SPACY_MODELS = {
     "it": "it_core_news_lg",
 }
 PRESIDIO_SCORE_THRESHOLD = 0.35
+
+# --- Pipeline C: GLiNER PII (stage 2) ----------------------------------------
+# Zero-shot span model: the keys below are the *prompts* the model sees, the values are our
+# catalog labels. Change the wording, not the code, to tune what it looks for.
+GLINER_MODEL = os.environ.get("DEID_GLINER_MODEL", "urchade/gliner_multi_pii-v1")
+GLINER_LABELS = {
+    "person":                     "PERSON",
+    "date":                       "DATE",
+    "date of birth":              "DATE",
+    "phone number":               "PHONE",
+    "email":                      "EMAIL",
+    "street address":             "STREET_ADDRESS",
+    "city":                       "LOCATION",
+    "postal code":                "LOCATION",
+    "organization":               "ORGANIZATION",
+    "hospital":                   "ORGANIZATION",
+    "patient id":                 "PATIENT_ID",
+    "case number":                "PATIENT_ID",
+    "social security number":     "AHV_NUMBER",
+    "health insurance number":    "INSURANCE_CARD",
+    "iban":                       "IBAN",
+}
+GLINER_THRESHOLD = float(os.environ.get("DEID_GLINER_THRESHOLD", "0.5"))
+GLINER_MAX_WORDS = 180            # chunk size; the model truncates above 384 word tokens
+TORCH_THREADS    = int(os.environ.get("DEID_TORCH_THREADS", "0")) or None   # None = torch default
+MODEL_CACHE_DIR  = PROJECT_ROOT / "models"    # Hugging Face download cache, git-ignored
 
 # NER utility filter profile for the *_pp pipelines (deidlab/postprocess.py):
 #   "clinical"  for medical letters: also drops uncorroborated single-token names and

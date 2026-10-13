@@ -6,8 +6,11 @@ Detection pipelines with one common interface:
 A_regex     deterministic Swiss rules only (rules.py)
 B_presidio  Microsoft Presidio: spaCy NER (de/fr/it) + Presidio built-ins
             (email, IBAN, phone CH, dates) + the same Swiss rules as A
+C_gliner    GLiNER multilingual PII model (gliner_pipeline.py) + the same rules as A
+D_union     B and C together (recall first)
+"<base>_pp" any of them wrapped with document-level post-processing (postprocess.py)
 
-Both run on CPU only.
+All run on CPU only.
 """
 import logging
 import re
@@ -120,8 +123,15 @@ def build(name, cfg):
         p = RegexPipeline()
     elif name == "B_presidio":
         p = PresidioPipeline(cfg.SPACY_MODELS, cfg.PRESIDIO_SCORE_THRESHOLD)
+    elif name == "C_gliner":
+        from .gliner_pipeline import GlinerPipeline
+        p = GlinerPipeline(cfg.GLINER_MODEL, cfg.GLINER_LABELS, cfg.GLINER_THRESHOLD,
+                           cfg.GLINER_MAX_WORDS, cfg.TORCH_THREADS, cfg.MODEL_CACHE_DIR)
+    elif name == "D_union":
+        from .gliner_pipeline import UnionPipeline
+        p = UnionPipeline("D_union", [build("B_presidio", cfg), build("C_gliner", cfg)])
     else:
-        raise ValueError(name)
+        raise ValueError(f"unknown pipeline {name!r}; see config.PIPELINES")
     _CACHE[name] = p
     return p
 

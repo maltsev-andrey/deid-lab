@@ -51,6 +51,7 @@ tsh ft3 ft4 hba1c glukose glucose cholesterin ldl hdl triglyceride ferritin tran
 cea ca19-9 ca-125 psa afp hcg nse ldh mch mchc mcv rdw
 protokoll schema zyklus zyklen woche wochen tag tage monat monate jahr jahre stunden uhr
 salbe lsg lösung drg dragees tbl supp creme gel formel level grad grades plastik
+department abteilung ambulanz hochschulambulanz poliklinik sprechstunde sekretariat direktor
 bekannter bekannte bekannt mit ohne bei nach vor seit unter zur zum vom aus der des die das
 """.split()
 
@@ -96,7 +97,7 @@ MEDICAL_SUFFIXES = (
     "pathie", "ämie", "stenose", "sklerose", "dysplasie", "zyste", "tumor", "ologie", "urgie", "logie",
     "manschette", "bolus", "spiegel", "kreatinin", "insuffizienz", "störung", "erkrankung", "entzündung",
     "schmerzen", "symptome", "symptomatik", "diagnostik", "behandlung", "untersuchung", "kontrolle",
-    "wert", "werte", "status", "protokoll", "schema", "zyklus", "stand", "deckung", "wechsel", "bildung",
+    "wert", "werte", "status", "protokoll", "schema", "zyklus", "stand", "pädie", "iatrie", "ambulanz", "deckung", "wechsel", "bildung",
     "empfinden", "affektion", "lamelle", "falte", "stranding", "punktat", "abstrich", "ausscheidung",
 )
 DRUG_SUFFIXES = (

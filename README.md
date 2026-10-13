@@ -19,13 +19,13 @@ Numbers from the **independent** benchmark, GraSCCo_PII test half (31 German cli
 | | A: rules | A + post-proc | B: Presidio + spaCy | B + post-proc |
 |---|---|---|---|---|
 | Recall strict, v0.3 (before tuning) | 50.2 % | 50.2 % | 67.1 % | 67.1 % |
-| Recall strict, **v0.4** | 89.1 % | 91.0 % | 92.8 % | **93.9 %** |
-| Recall lenient, v0.4 | 90.7 % | 93.1 % | 97.1 % | **96.5 %** |
-| Precision, v0.4 | 90.5 % | **94.0 %** | 37.8 % | 79.2 % |
+| Recall strict, **v0.4** | 89.1 % | 91.0 % | 92.8 % | **94.1 %** |
+| Recall lenient, v0.4 | 90.7 % | 93.1 % | 97.1 % | **96.6 %** |
+| Precision, v0.4 | 90.5 % | **94.9 %** | 37.8 % | 79.9 % |
 | Speed, ms/doc (1 core, long letters) | 8 | 10 | ~135 | ~140 |
 
 Same code on our own synthetic corpus (600 documents, 11 009 spans): A_pp 98.7 %, B_pp 99.9 % recall,
-B_pp precision 94.5 %. The gap between the two corpora is the whole point of this project.
+B_pp precision 94.7 %. The gap between the two corpora is the whole point of this project.
 
 ## Table of contents
 
@@ -35,7 +35,9 @@ B_pp precision 94.5 %. The gap between the two corpora is the whole point of thi
 - [Pipelines](#pipelines)
 - [Post-processing](#post-processing)
 - [Results](#results)
+- [Pipeline C: transformer PII model](#pipeline-c-transformer-pii-model-stage-2)
 - [Side-by-side viewer](#side-by-side-viewer)
+- [Examples](#examples)
 - [External benchmarks](#external-benchmarks)
 - [What the external benchmark changed](#what-the-external-benchmark-changed)
 - [Quick start](#quick-start)
@@ -81,8 +83,13 @@ Hard cases built in on purpose:
 |---|---|---|
 | **A_regex** | Swiss rules: AHV with checksum, insurance card, CH IBAN, phone +41/0041/0xx, PID/case numbers with context keywords, numeric and written dates DE/FR/IT, street patterns, PLZ + locality, hospital keywords, honorific + name, field label + name | Python only |
 | **B_presidio** | Presidio Analyzer, spaCy `*_core_news_lg` NER for DE/FR/IT, Presidio built-ins (email, IBAN, phone CH, dates) plus all A rules as a custom recognizer | ~2.7 GB RAM with three lg models loaded |
+| **C_gliner** (stage 2) | GLiNER multilingual PII model (`urchade/gliner_multi_pii-v1`, mDeBERTa base). Zero-shot: the catalog labels go in as text prompts (`person`, `health insurance number`, `case number` ...), plus all A rules | torch CPU + gliner, ~1.2 GB RAM, 0.3 to 2 s per letter on one core |
+| **D_union** (stage 2) | B and C spans together, recall first; post-processing does the precision work | both of the above |
 
 Both expose `analyze(text, lang) -> list[Span]`, so new pipelines plug in without touching evaluation.
+
+![pipeline architecture](docs/deid-lab-architecture.png)
+*Rules (A) and NER (B) run as independent pipelines; the `*_pp` variants add the document-level post-processing below.*
 
 ## Post-processing
 
@@ -114,6 +121,30 @@ What the run says:
 
 Full numbers: [`reports/synthetic/REPORT.md`](reports/synthetic/REPORT.md).
 
+## Pipeline C: transformer PII model (stage 2)
+
+Stage 1 ended with 94 % recall on the GraSCCo test half and a hand-made clinical filter holding
+B's precision at 80 %. The remaining misses (first names alone, multi-line letterheads, ward
+names) are context problems that a general news-NER model does not solve. Pipeline C swaps the
+model, not the harness: [GLiNER](https://github.com/urchade/GLiNER) is a small span model that
+takes the entity labels as text prompts, so our catalog becomes the prompt list
+(`config.GLINER_LABELS`) and nothing is retrained.
+
+```bash
+# in the deid conda env, once. CPU-only torch first, or pip pulls the CUDA build (several GB).
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements-c.txt
+python tests/test_gliner_pipeline.py          # offline plumbing test, no model download
+
+# benchmark C and D against B on the external clinical corpus
+DEID_DATASET=grascco DEID_PIPELINES=B_presidio_pp,C_gliner,C_gliner_pp,D_union_pp ./run_eval.sh
+```
+
+The checkpoint (~1.1 GB) downloads once from Hugging Face into `models/` (git-ignored) and
+runs offline afterwards. Knobs: `DEID_GLINER_THRESHOLD` (default 0.5), `DEID_GLINER_MODEL`,
+`DEID_TORCH_THREADS`. Long letters are cut into chunks of 180 words at line breaks
+(`deidlab/gliner_pipeline.py`), because GLiNER truncates past 384 word tokens.
+
 ## Side-by-side viewer
 
 `reports/<dataset>/compare.html` is a single offline HTML file (no server, no internet). Open it in any browser.
@@ -121,6 +152,12 @@ Full numbers: [`reports/synthetic/REPORT.md`](reports/synthetic/REPORT.md).
 - left: input with every gold PII span coloured by outcome for the selected pipeline: masked, partial leak, missed
 - right: masked output; leaked text highlighted red, false-positive tokens outlined orange (hover shows the original)
 - switch pipelines, filter to documents with leaks or false positives, filter by language, full-text search, `j`/`k` to step
+
+## Examples
+
+`examples/` holds four original/anonymized pairs straight from pipeline `B_presidio_pp`: a German discharge
+letter, a French lab report, an Italian referral (all synthetic) and one GraSCCo letter from the untouched
+test half. See `examples/README.md` for provenance and what to look for.
 
 ## External benchmarks
 
@@ -203,11 +240,16 @@ deid-lab/
 ├── config.py                    # all paths and parameters, DATASET switch
 ├── run_all.sh / run_eval.sh
 ├── catalog/entities.yaml        # what to remove, open business decisions
+├── examples/                    # original vs anonymized pairs
+├── tests/                       # offline tests (pipeline C plumbing with a fake model)
+├── requirements-c.txt           # torch CPU + gliner for pipelines C and D
+├── docs/                        # architecture diagram (PNG + SVG source)
 ├── deidlab/
 │   ├── swiss_data.py            # PLZ/localities, street and hospital patterns, distractors
 │   ├── generator.py             # templates DE/FR/IT + gold spans
 │   ├── rules.py                 # Swiss regex rules + validators (pipeline A)
 │   ├── pipelines.py             # A_regex, B_presidio, merge, masking
+│   ├── gliner_pipeline.py       # C_gliner (GLiNER PII, stage 2), D_union
 │   ├── postprocess.py           # deny list, NER utility filter, propagation, person linking (*_pp)
 │   ├── medical_terms.py         # clinical vocabulary for the utility filter
 │   └── evaluate.py              # coverage-based leak and precision metrics
@@ -228,6 +270,6 @@ deid-lab/
 
 - **Optimistic bias on synthetic data.** Quote GraSCCo test numbers. GraSCCo is itself synthetic and German; Swiss client documents will differ again, so a client sample set is the next benchmark.
 - **B precision.** 79 % on GraSCCo test. The remaining false positives are propagated organ-surnames (`Leber`, `Hals`) and NER phrases with adjectives; a transformer PII model (pipeline C) should replace most of the hand-made filter.
-- **Pipeline C.** Transformer PII model (GLiNER or a multilingual privacy-filter model) via Presidio on CPU, then **D** as the combined production candidate.
+- **Pipeline C / D.** Implemented in stage 2 (GLiNER PII + rules, and the B + C union); numbers on GraSCCo pending the first run on srv-anaconda-01.
 - **File formats.** Today plain text. Next: DOCX, text PDF, scanned PDF with OCR, document metadata.
 - **Real formats.** PID and case-number patterns must be collected from real client samples before any production use.

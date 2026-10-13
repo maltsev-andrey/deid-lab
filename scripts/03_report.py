@@ -20,11 +20,17 @@ FIG.mkdir(parents=True, exist_ok=True)
 # palette: categorical slots 1/2, recessive ink and grid
 SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e4e3df"
 # categorical slots in fixed order, one per pipeline
-COLORS = {"A_regex": "#2a78d6", "A_regex_pp": "#1baf7a", "B_presidio": "#eb6834", "B_presidio_pp": "#6250d6"}
-LABELS = {"A_regex": "A  regex rules", "A_regex_pp": "A + post-processing",
-          "B_presidio": "B  Presidio + spaCy", "B_presidio_pp": "B + post-processing"}
+_COLORS = {"A_regex": "#2a78d6", "A_regex_pp": "#1baf7a", "B_presidio": "#eb6834", "B_presidio_pp": "#6250d6",
+           "C_gliner": "#c9a227", "C_gliner_pp": "#8a6d00", "D_union": "#d1457f", "D_union_pp": "#7a1f49"}
+_LABELS = {"A_regex": "A  regex rules", "A_regex_pp": "A + post-processing",
+           "B_presidio": "B  Presidio + spaCy", "B_presidio_pp": "B + post-processing",
+           "C_gliner": "C  GLiNER PII", "C_gliner_pp": "C + post-processing",
+           "D_union": "D  B + C union", "D_union_pp": "D + post-processing"}
+_FALLBACK = ["#2a78d6", "#1baf7a", "#eb6834", "#6250d6", "#c9a227", "#d1457f", "#52514e", "#0b0b0b"]
+COLORS = {p: _COLORS.get(p, _FALLBACK[i % len(_FALLBACK)]) for i, p in enumerate(cfg.PIPELINES)}
+LABELS = {p: _LABELS.get(p, p) for p in cfg.PIPELINES}
 NP = len(cfg.PIPELINES)
-HERO_PIPE = "B_presidio_pp" if "B_presidio_pp" in cfg.PIPELINES else cfg.PIPELINES[-1]
+HERO_PIPE = next((p for p in ("D_union_pp", "C_gliner_pp", "B_presidio_pp") if p in cfg.PIPELINES), cfg.PIPELINES[-1])
 
 plt.rcParams.update({
     "figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
