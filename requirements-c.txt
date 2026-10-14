@@ -5,3 +5,6 @@
 gliner>=0.2.13
 transformers>=4.40,<5
 huggingface_hub>=0.23
+# mDeBERTa tokenizer conversion inside gliner needs both; neither is pulled in automatically
+protobuf>=4.21
+sentencepiece>=0.2

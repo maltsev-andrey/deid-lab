@@ -40,7 +40,7 @@ AI4PRIVACY_PER_LANG = 500      # sampled texts per language from the validation 
 # (deny list, propagation of found values, person linking). See deidlab/postprocess.py
 # Stage 2 adds C_gliner (transformer PII model) and D_union (B + C). Both need torch + gliner
 # (requirements-c.txt); the default list runs without them. Override per run:
-#   DEID_PIPELINES=B_presidio_pp,C_gliner,C_gliner_pp,D_union_pp ./run_eval.sh
+#   DEID_PIPELINES=B_presidio_pp,C_gliner,C_gliner_pp ./run_eval.sh   (D_union = B+C, optional)
 PIPELINES = ["A_regex", "A_regex_pp", "B_presidio", "B_presidio_pp"]
 if os.environ.get("DEID_PIPELINES"):
     PIPELINES = [p.strip() for p in os.environ["DEID_PIPELINES"].split(",") if p.strip()]
@@ -79,6 +79,21 @@ GLINER_THRESHOLD = float(os.environ.get("DEID_GLINER_THRESHOLD", "0.5"))
 GLINER_MAX_WORDS = 180            # chunk size; the model truncates above 384 word tokens
 TORCH_THREADS    = int(os.environ.get("DEID_TORCH_THREADS", "0")) or None   # None = torch default
 MODEL_CACHE_DIR  = PROJECT_ROOT / "models"    # Hugging Face download cache, git-ignored
+# Air-gapped hosts: DEID_OFFLINE=1 forbids every network call of huggingface_hub, so a
+# missing checkpoint fails fast instead of hanging on a connect timeout.
+if os.environ.get("DEID_OFFLINE", "0") == "1":
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
+# --- AFP print streams (stage 2) -----------------------------------------------
+# scripts/21_afp_mask.py masks AFP files in place (deidlab/afp.py). Client-specific knobs:
+AFP_PIPELINE     = os.environ.get("DEID_AFP_PIPELINE", "B_presidio_pp")
+AFP_LANG         = os.environ.get("DEID_AFP_LANG", "de")     # NER language for the text layer
+AFP_CODEPAGE     = os.environ.get("DEID_AFP_CODEPAGE") or None   # None = detect from MCF, else "cp500"/"cp1141"
+AFP_FILLER       = "X"
+AFP_SYMBOL_FONTS = ()        # local font ids whose text is barcode/OMR glyphs, e.g. (7,) ; blanked with spaces
+AFP_ZONES        = []        # [(x0, y0, x1, y1), ...] in 1/1440 inch, masked unconditionally (recipient window)
+AFP_MASK_TAGS    = True      # TLE / BNG / ENG / NOP
 
 # NER utility filter profile for the *_pp pipelines (deidlab/postprocess.py):
 #   "clinical"  for medical letters: also drops uncorroborated single-token names and

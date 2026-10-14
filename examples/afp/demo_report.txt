@@ -1,0 +1,94 @@
+pipeline A_regex_pp, codepage cp500, pages 3, text fragments 347
+bytes masked: text 800, tags (TLE/BNG/ENG/NOP) 147
+file size before/after: 7710 / 7710
+
+spans found:
+  ORGANIZATION    Kantonsspital Baden
+  DATE            11.03.2026
+  PERSON          Schwab Vivien
+  DATE            19.02.2001
+  AHV_NUMBER      756.4395.2071.69
+  STREET_ADDRESS  Kirchweg 47
+  LOCATION        5000 Aarau
+  PHONE           061 431 64 75
+  PHONE           077 919 28 32
+  EMAIL           vivienschwab72@swissonline.ch
+  INSURANCE_CARD  80756 59407 81618 49593
+  PATIENT_ID      10768805
+  PATIENT_ID      2026-4823498
+  PERSON          Frau Vivien Schwab
+  DATE            19.02.2001
+  DATE            9. März 2026
+  DATE            11.03.2026
+  PERSON          Schwab
+  DATE            2026
+  PERSON          Kristina Tanner
+  PERSON          Leticia Aebi
+  DATE            09.03.2026
+  PERSON          Kristina Tanner
+  LOCATION        Baden
+  PERSON          Stephan Kohler
+  PHONE           (077 303 05 64
+  PERSON          Kristian Merz
+  PERSON          Leticia Aebi
+  PERSON          Kristina Tanner
+  STREET_ADDRESS  Schumachergasse 66
+  LOCATION        5400 Baden
+  DATE            2026-10-14
+  PATIENT_ID      10768805
+  ORGANIZATION    Hôpital de Neuchâtel
+  PERSON          Camille Mercier
+  LOCATION        1400 Yverdon-les-Bains
+  PERSON          VIENNE Luca
+  DATE            15.08.1969
+  PATIENT_ID      16828262
+  DATE            20 juillet 2026
+  DATE            20 juillet 2026
+  PERSON          Luca
+  PERSON          Pierre Treboux
+  DATE            31 juillet 2026
+  DATE            2026-10-14
+  PATIENT_ID      16828262
+  PERSON          Martina Migliaccio
+  STREET_ADDRESS  Via Salvo 81
+  LOCATION        7742 Poschiavo
+  PHONE           091 589 32 87
+  LOCATION        Poschiavo
+  DATE            09.04.2026
+  ORGANIZATION    Ospedale San Parri
+  PERSON          Ermanno Borsellino
+  DATE            17.05.1973
+  STREET_ADDRESS  Via Motta 33
+  LOCATION        6850 Mendrisio
+  AHV_NUMBER      756.4253.6981.08
+  PERSON          Borsellino
+  PERSON          Ermanno
+  EMAIL           borsellino.ermanno@swissonline.ch
+  INSURANCE_CARD  80756390049630966676
+  PERSON          Martina Migliaccio
+  DATE            2026-10-14
+  PATIENT_ID      00000003
+
+index tags after masking:
+  NOP              'deid-lab synthetic AFP, no real persons, DEIDDEMO'
+  BNG              'XXXXXXXX'
+  TLE PatientName  'XXXXXX XXXXXX'
+  TLE PatientID    'XXXXXXXX'
+  TLE AHV          'XXXXXXXXXXXXXXXX'
+  TLE DocType      'discharge'
+  TLE Lang         'de'
+  ENG              'XXXXXXXX'
+  BNG              'XXXXXXXX'
+  TLE PatientName  'XXXXXXX XXXXXXX'
+  TLE PatientID    'XXXXXXXX'
+  TLE AHV          ''
+  TLE DocType      'lab'
+  TLE Lang         'fr'
+  ENG              'XXXXXXXX'
+  BNG              'XXXXXXXX'
+  TLE PatientName  'XXXXXXX XXXXXXXXXX'
+  TLE PatientID    'XXXXXXXX'
+  TLE AHV          'XXXXXXXXXXXXXXXX'
+  TLE DocType      'referral'
+  TLE Lang         'it'
+  ENG              'XXXXXXXX'

@@ -27,6 +27,10 @@ Numbers from the **independent** benchmark, GraSCCo_PII test half (31 German cli
 Same code on our own synthetic corpus (600 documents, 11 009 spans): A_pp 98.7 %, B_pp 99.9 % recall,
 B_pp precision 94.7 %. The gap between the two corpora is the whole point of this project.
 
+**Stage 2, pipeline C** (GLiNER PII model + rules + post-processing) on the same test half:
+recall strict **95.0 %**, lenient 97.0 %, precision **92.5 %** (47 false positives instead of 147),
+at about 3 s per letter on CPU. Same leak protection as B, three times fewer medical terms removed.
+
 ## Table of contents
 
 - [What it does](#what-it-does)
@@ -36,11 +40,13 @@ B_pp precision 94.7 %. The gap between the two corpora is the whole point of thi
 - [Post-processing](#post-processing)
 - [Results](#results)
 - [Pipeline C: transformer PII model](#pipeline-c-transformer-pii-model-stage-2)
+- [AFP print streams](#afp-print-streams-stage-2)
 - [Side-by-side viewer](#side-by-side-viewer)
 - [Examples](#examples)
 - [External benchmarks](#external-benchmarks)
 - [What the external benchmark changed](#what-the-external-benchmark-changed)
 - [Quick start](#quick-start)
+- [Offline deployment](#offline-deployment-air-gapped-host)
 - [Project layout](#project-layout)
 - [Known limits and next steps](#known-limits-and-next-steps)
 
@@ -137,13 +143,42 @@ pip install -r requirements-c.txt
 python tests/test_gliner_pipeline.py          # offline plumbing test, no model download
 
 # benchmark C and D against B on the external clinical corpus
-DEID_DATASET=grascco DEID_PIPELINES=B_presidio_pp,C_gliner,C_gliner_pp,D_union_pp ./run_eval.sh
+DEID_DATASET=grascco DEID_PIPELINES=B_presidio_pp,C_gliner,C_gliner_pp ./run_eval.sh
 ```
 
 The checkpoint (~1.1 GB) downloads once from Hugging Face into `models/` (git-ignored) and
 runs offline afterwards. Knobs: `DEID_GLINER_THRESHOLD` (default 0.5), `DEID_GLINER_MODEL`,
 `DEID_TORCH_THREADS`. Long letters are cut into chunks of 180 words at line breaks
 (`deidlab/gliner_pipeline.py`), because GLiNER truncates past 384 word tokens.
+
+## AFP print streams (stage 2)
+
+Clients deliver AFP (IBM MO:DCA print streams), not text. `deidlab/afp.py` reads the text
+layer with page coordinates and masks it **in place**: AFP positions are absolute, so each
+replacement keeps the byte length (`Schwab Vivien` becomes `XXXXXX XXXXXX`, padded to the
+word width when font metrics are known). Index tags (TLE), page-group names (BNG/ENG) and
+comments (NOP) are masked too; images, overlays and fonts pass through untouched. Pure
+Python, standard library only; EBCDIC code pages (CP500, CP1141) are built into Python.
+
+![AFP before and after](examples/afp/demo_side_by_side.png)
+*Synthetic three-document print stream, page 1. Left: original text layer. Right: the same AFP after masking, same size to the byte.*
+
+```bash
+python tests/test_afp.py                   # write -> read round trip, masking, tags, zones
+python scripts/20_afp_demo.py              # builds examples/afp/* from the synthetic corpus
+python scripts/21_afp_mask.py in_dir out_dir --render   # batch: masked AFPs + JSON/CSV reports + PNGs
+```
+
+`21_afp_mask.py` keeps file size and structure, writes a report per file (spans, bytes
+masked, fonts) and warns about text in fonts without a code page (barcode / OMR glyphs:
+add them to `config.AFP_SYMBOL_FONTS`). Per-client settings live in `config.AFP_*`.
+
+What the real-world sample taught us (one client letter, 5.5 MB, one page): text is one
+TRN per word in CP500; the letter carried no TLE but a job-control footer with customer
+numbers in formats our catalog does not know yet, and seven fragments in a DataMatrix
+font (`X0DM05`) that encode the same customer data as glyph codes. Those need per-client
+rules and a symbol-font list (`mask_document(..., symbol_fonts=...)`), and the sender
+address needs a zone rule (`zones=`) if it must survive.
 
 ## Side-by-side viewer
 
@@ -233,6 +268,14 @@ Full cycle `run_all.sh` with all four pipelines: one to two minutes on one core,
 
 Tuning lives in `config.py` (dataset, corpus size, languages, pipelines, spaCy model size, score threshold). No CLI flags.
 
+## Offline deployment (air-gapped host)
+
+The production host has no network. `deploy/make_offline_bundle.sh` packs the whole conda
+environment (conda-pack), the code and the models into one directory with checksums;
+`deploy/install_offline.sh` installs it on a clean RHEL 9 and runs the self-test without a
+single download. No RPM beyond a minimal RHEL 9. Details and the minimal AFP-only variant:
+[deploy/INSTALL.md](deploy/INSTALL.md).
+
 ## Project layout
 
 ```
@@ -250,6 +293,8 @@ deid-lab/
 │   ├── rules.py                 # Swiss regex rules + validators (pipeline A)
 │   ├── pipelines.py             # A_regex, B_presidio, merge, masking
 │   ├── gliner_pipeline.py       # C_gliner (GLiNER PII, stage 2), D_union
+│   ├── afp.py                   # AFP/MO:DCA reader, in-place masking, minimal writer (stage 2)
+│   ├── afp_render.py            # AFP text layer -> PNG (Pillow), for slides and checks
 │   ├── postprocess.py           # deny list, NER utility filter, propagation, person linking (*_pp)
 │   ├── medical_terms.py         # clinical vocabulary for the utility filter
 │   └── evaluate.py              # coverage-based leak and precision metrics
@@ -270,6 +315,6 @@ deid-lab/
 
 - **Optimistic bias on synthetic data.** Quote GraSCCo test numbers. GraSCCo is itself synthetic and German; Swiss client documents will differ again, so a client sample set is the next benchmark.
 - **B precision.** 79 % on GraSCCo test. The remaining false positives are propagated organ-surnames (`Leber`, `Hals`) and NER phrases with adjectives; a transformer PII model (pipeline C) should replace most of the hand-made filter.
-- **Pipeline C / D.** Implemented in stage 2 (GLiNER PII + rules, and the B + C union); numbers on GraSCCo pending the first run on srv-anaconda-01.
-- **File formats.** Today plain text. Next: DOCX, text PDF, scanned PDF with OCR, document metadata.
+- **Pipeline C.** GraSCCo test: 95.0 % recall / 92.5 % precision versus 94.1 % / 79.9 % for B_pp, at 16x the CPU time (3 s per letter). The post-processing filter was tuned on spaCy's mistakes and now drops some correct GLiNER names (raw C: 96.3 % recall); relaxing it for GLiNER spans is the next tuning step. **D** (B + C union) adds 0.7 points recall and brings back all of B's false positives (78 % precision): not worth it, kept as an option only.
+- **File formats.** Plain text and AFP text layer. Next: DOCX, text PDF, scanned PDF with OCR, AFP images and barcode fonts.
 - **Real formats.** PID and case-number patterns must be collected from real client samples before any production use.
