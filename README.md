@@ -215,7 +215,7 @@ Rules and filters are tuned on the GraSCCo **dev** half only; every number quote
 *Per entity on GraSCCo. Organisations and patient IDs remain the weak categories: institution names span several lines, and ward/room numbers are only recognisable from context.*
 
 ```bash
-# [ansible@srv-anaconda-01]  (deid)
+# on the analysis host, conda env deid
 python scripts/10_fetch_external.py          # downloads to data/external_raw/ (~145 MB)
 python scripts/11_import_ai4privacy.py       # -> data/ai4privacy/docs.jsonl (500 texts per language)
 python scripts/12_import_grascco.py          # -> data/grascco/docs.jsonl, dev/test split
@@ -248,11 +248,11 @@ What is left on GraSCCo test is mostly out of reach for rules: first names in fr
 
 ## Quick start
 
-Code lives on the NFS share, the conda environment on local disk.
+Code lives on a shared NFS path, the conda environment on local disk.
 
 ```bash
-# [ansible@srv-anaconda-01]  (NFS 170.168.1.30:/nfs/shared mounted)
-cd /nfs/shared/projects/deid-lab
+# on the analysis host (RHEL 8/9, Miniforge), project on a shared NFS path
+cd /path/to/deid-lab
 mamba env create -f environment.yml          # Python 3.11 env "deid", independent of RHEL 8 system python
 conda activate deid                          # activate via conda; mamba 2.x needs its own shell hook
 pip config --site set global.index-url https://pypi.org/simple   # this env only, host mirror untouched

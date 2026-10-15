@@ -14,8 +14,8 @@ from pathlib import Path
 DATASET = os.environ.get("DEID_DATASET", "synthetic")   # env var overrides, e.g. DEID_DATASET=grascco ./run_eval.sh
 
 # --- Paths -------------------------------------------------------------------
-# Project root defaults to the directory of this file. On srv-anaconda-01 this
-# resolves to /nfs/shared/projects/deid-lab
+# Project root defaults to the directory of this file (wherever the checkout lives,
+# a shared NFS path on the analysis host).
 PROJECT_ROOT = Path(__file__).resolve().parent
 
 CATALOG_FILE   = PROJECT_ROOT / "catalog" / "entities.yaml"

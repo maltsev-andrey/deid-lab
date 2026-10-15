@@ -4,7 +4,7 @@
 # conda env that already runs ./run_all.sh and pipeline C.
 #
 #   conda activate deid
-#   deploy/make_offline_bundle.sh /nfs/shared/bundle
+#   deploy/make_offline_bundle.sh /path/to/bundle
 #
 # Output: <bundle>/deid-env.tar.gz    the whole conda env (python + presidio + spacy models + torch + gliner)
 #         <bundle>/deid-lab-src.tar.gz project code, examples, docs (no data/, runs/, .git)

@@ -26,10 +26,10 @@ Tesseract (OCR for scanned images) and Java are **not** needed for the current s
   `models/` holds the checkpoint.
 
 ```bash
-[ansible@rhel9-build ~]$ conda activate deid
-[ansible@rhel9-build ~]$ cd /nfs/shared/projects/deid-lab
-[ansible@rhel9-build deid-lab]$ DEID_DATASET=grascco DEID_PIPELINES=C_gliner ./run_eval.sh    # fills models/
-[ansible@rhel9-build deid-lab]$ deploy/make_offline_bundle.sh /nfs/shared/bundle
+[user@rhel9-build ~]$ conda activate deid
+[user@rhel9-build ~]$ cd /path/to/deid-lab
+[user@rhel9-build deid-lab]$ DEID_DATASET=grascco DEID_PIPELINES=C_gliner ./run_eval.sh    # fills models/
+[user@rhel9-build deid-lab]$ deploy/make_offline_bundle.sh /path/to/bundle
 ```
 
 ## Install on the target
