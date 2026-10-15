@@ -53,6 +53,7 @@ protokoll schema zyklus zyklen woche wochen tag tage monat monate jahr jahre stu
 salbe lsg lösung drg dragees tbl supp creme gel formel level grad grades plastik
 department abteilung ambulanz hochschulambulanz poliklinik sprechstunde sekretariat direktor
 bekannter bekannte bekannt mit ohne bei nach vor seit unter zur zum vom aus der des die das
+fieber husten schmerz schmerzen übelkeit erbrechen durchfall schwindel dyspnoe ödem ödeme juckreiz ausschlag
 """.split()
 
 DRUGS = """

@@ -17,13 +17,19 @@ from .pipelines import merge
 from .rules import Span
 
 
-def coverage(gold, preds):
-    covered = 0
+def coverage(gold, preds, text=None):
+    """Share of the gold span's characters covered by predictions. Whitespace inside the
+    gold span (line breaks in multi-line institution headers) never counts as a leak."""
+    gs, ge = gold["start"], gold["end"]
+    hit = bytearray(ge - gs)
     for p in preds:
-        lo, hi = max(gold["start"], p.start), min(gold["end"], p.end)
+        lo, hi = max(gs, p.start), min(ge, p.end)
         if hi > lo:
-            covered += hi - lo
-    return min(covered, gold["end"] - gold["start"]) / (gold["end"] - gold["start"])
+            hit[lo - gs:hi - gs] = b"\x01" * (hi - lo)
+    idx = [i for i in range(ge - gs) if text is None or not text[gs + i].isspace()]
+    if not idx:
+        return 1.0
+    return sum(hit[i] for i in idx) / len(idx)
 
 
 def evaluate(docs, predictions, full_cov=0.999):
@@ -33,7 +39,7 @@ def evaluate(docs, predictions, full_cov=0.999):
         text = d["text"]
         preds = merge(predictions[d["id"]])
         for g in d["spans"]:
-            c = coverage(g, preds)
+            c = coverage(g, preds, text)
             status = "FULL" if c >= full_cov else ("PARTIAL" if c > 0 else "MISSED")
             ctx_s, ctx_e = max(0, g["start"] - 40), min(len(text), g["end"] + 40)
             gold_rows.append({

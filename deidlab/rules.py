@@ -49,7 +49,7 @@ NAME_SEQ = rf"{NAME_TOKEN}(?:[ ](?:(?:de|di|da|del|della|von|van|du|De|Di|Da|Von
 HONORIFICS = (
     r"(?:(?i:Univ\.?-?Prof\.|Prof\.|Priv\.-?\s?Doz\.|Dr\.?\s?med\.?(?:\s?(?:univ(?:ers)?|dent|vet|mult)\.?)?|"
     r"Dr\.\s?rer\.\s?nat\.|Dr\.\s?mult\.|DDr\.|Dr\.a\.?|Dipl\.-?(?:Med|Ing)\.|Mag\.|MUDr\.|Dott\.ssa|Dott\.|Dr\.ssa)|"
-    r"Dr\.|Dre?\s|PD|OA|OÄ|Pat\.|Ass\.|Doz\.|Univ\.-?Doz\.|DGKS|DGKP|Ltd\.|Prim\.|"
+    r"Dr\.|Dre?\s|PD|OA|OÄ|Pat\.|Ass\.|Doz\.|Univ\.-?Doz\.|DGKS|DGKP|Ltd\.|Prim\.|mult\.|med\.|univ\.|habil\.|"
     r"Herrn?|Frau|Hr\.|Fr\.|Fräulein|HERRN?|FRAU|"
     r"Madame|Monsieur|Mme|Mlle|M\.|"
     r"Sig\.ra|Sig\.|[Ss]ignora|[Ss]ignor|madame|monsieur)"
@@ -104,13 +104,13 @@ ORG_TAIL_WORD = rf"(?:[{UC}][\w\-\.&]+|der|des|an der|de|di|du|des|régional|reg
 CITY_TOKEN = rf"[{UC}][{LC}\.]*(?:-[{UC}{LC}][{LC}\.]*)*"      # "Yverdon-les-Bains", "St. Anna", "Alt-Neudorf"
 
 STREET_SUFFIX = (r"straße|strasse|strße|str\.|gasse|weg|platz|allee|ring|damm|ufer|pfad|steig|promenade|"
-                 r"chaussee|markt|hof|berg|tal|graben|zeile|landstraße|rain|halde|bühl|matte")
+                 r"chaussee|markt|hof|berg|tal|graben|zeile|landstraße|rain|halde|bühl|matte|kamp|busch|feld|wall")
 STREET_NAME = rf"(?:[{UC}][{LC}]{{1,10}}(?:er|e|sche)[ ])?(?:[{UC}][\w\-]*(?i:{STREET_SUFFIX})|(?i:Straße|Strasse|Str\.|Gasse|Weg|Platz|Allee))\.?"
 
 PHONE_KEY = r"(?:Tel(?:efon|efax|\.)?|Fax|Handy|Mobil(?:e|tel)?|Durchwahl|DW|Info|Sekretariat|Telefono|Cellulare|Tél(?:éphone)?|Portable)"
 PHONE_BODY = r"(?:\+\d{2,3} ?)?(?:\(0?\d{1,5}\) ?)?\d[\d /().\-]{5,}\d(?: ?- ?DW)?"
 
-ID_KEY = (r"(?:PIZ|PID|Patienten-?ID|Pat\.?-?ID|Vorgangs-?Nr|E-Nr|H-?Nr|Fallzahl|Fall-?Nr|Fallnummer|Fall|SV|Aufnahme-?Nr|Pat\.?-?Nr|Patienten-?Nr|Protokoll[ -]?Nr|"
+ID_KEY = (r"(?:PIZ|PID|Patienten-?ID|Pat\.?-?ID|Vorgangs-?Nr|E-Nr|H-?Nr|Fallzahl|Fall-?Nr|Fallnummer|Fall|SV[ -]?Nr|SVNR|Sozialversicherungs-?Nr|SV|Aufnahme-?Nr|Pat\.?-?Nr|Patienten-?Nr|Protokoll[ -]?Nr|"
           r"Journal-?Nr|Auftrags-?Nr|Befund-?Nr|Labor-?Nr|Vers\.?-?Nr|Versicherungs-?Nr|Versichertennummer|KVNR|"
           r"Histologie|Histo|Zytologie|Präparat|Aktenzeichen|Az|Unsere Zeichen|Unser Zeichen|Ihr Zeichen|"
           r"N°\s?(?:de\s)?(?:dossier|patient|cas)|No\.?\s?patient|N\.\s?(?:paziente|caso|cartella)|Numero (?:paziente|caso))")
@@ -131,6 +131,11 @@ def person_valid(v: str) -> bool:
         return False
     if re.match(rf"^M\.\s?(?:{EPONYMS})$", v):                 # Morbus, not Monsieur
         return False
+    # "B. Pantozol", "T. Fieber": an initial followed by a drug or clinical word is an abbreviation
+    from .medical_terms import DENY as _MED, DRUG_SUFFIXES as _DS, MEDICAL_SUFFIXES as _MS
+    last = toks[-1].lower()
+    if len(toks) >= 2 and len(toks[0]) == 1 and (last in _MED or last.endswith(_DS) or last.endswith(_MS)):
+        return False                                             # initial-led only: "Dr. Heinz Hals" is a name
     return True
 
 
@@ -169,7 +174,7 @@ RULES = [
 
     # --- dates -------------------------------------------------------------------
     # d.m.yyyy, d/m/yyyy, d.m.yy, "10. 03. 2043", "23.04 2029", "8.11. 2064"
-    ("DATE", re.compile(rf"\b{DAY}[./]\s?{MON}(?:[./]\s?|\s){YEAR}\b"), 0.95, None),
+    ("DATE", re.compile(rf"\b{DAY}[./]\s?{MON}(?:[./]\s?|\s){YEAR}(?!\d)"), 0.95, None),
     ("DATE", re.compile(rf"\b{DAY}[./]{MON}[./]\d{{2}}\b(?![./]\d)"), 0.9, None),
     ("DATE", re.compile(rf"\b{YEAR}-\d{{2}}-\d{{2}}\b"), 0.95, None),
     # day.month. without year: "2.11.", "vom 2.11. – 24.11.28"
@@ -222,16 +227,16 @@ RULES = [
     # honorific(s) + name, with initials and particles: "Prof. Dr. Ch. Janssen", "Frau de Beauharnais"
     ("PERSON", re.compile(rf"(?<![\w])(?:{HONORIFIC_SEQ})(?P<v>{PERSON_NAME})"), 0.85, person_valid),
     # honorific + lone initial: "Herr V.", "Frau W."
-    ("PERSON", re.compile(rf"\b(?:Herrn?|Frau|Hr\.|Fr\.)\s(?P<v>[{UC}]\.)(?!\s?[{UC}{LC}])"), 0.8, None),
+    ("PERSON", re.compile(rf"\b(?:Herrn?|Frau|Hr\.|Fr\.)\s(?P<v>[{UC}]\.)(?!\s?[{UC}])"), 0.8, None),
     # field label + name: "Patient: Schwab Vivien", "Betrifft: Tupolev, Konstantin"
     ("PERSON", re.compile(rf"\b{FIELD_LABELS_PERSON}(?:[ \t]*:[ \t]*|[ \t]+)(?P<v>{PERSON_NAME}(?:,\s{NAME_TOKEN}(?:-{NAME_TOKEN})?)?)"), 0.85, None),
     # surname-first with comma after a person context: "Patientin Haefner, Heinz", "über Frau CHRIST, Charlotte"
     ("PERSON", re.compile(
         rf"\b(?:Patient(?:en|in)?|Frau|Herrn?|Betrifft:?|Betr\.?:?)\s(?P<v>(?:{CAPS_TOKEN}|{NAME_TOKEN}),\s{NAME_TOKEN}(?:-{NAME_TOKEN})?)"), 0.85, None),
     # initials + surname without honorific: "J. Thiel", "K. O. von Hausen"; not "M. Crohn"
-    ("PERSON", re.compile(rf"(?<![\w.])(?P<v>(?!I\.|V\.\s?a|Z\.\s?n){INITIALS}{PARTICLE}{NAME_TOKEN})(?![{LC}])"), 0.6, person_valid),
+    ("PERSON", re.compile(rf"(?<![\w.])(?<![zusovZUSOV]\. )(?<![zusovZUSOV]\.)(?P<v>(?!I\.|V\.\s?a|Z\.\s?n){INITIALS}{PARTICLE}{NAME_TOKEN})(?![{LC}])"), 0.6, person_valid),
     # surname + initial (signature list): "Hendlbein H.", "Brunzli B."
-    ("PERSON", re.compile(rf"(?:(?m:^)|:\s|\|\s|\t)[ ]*(?P<v>{NAME_TOKEN} (?!M\.|N\.|V\.|A\.)[{UC}]\.)(?=\s|$)"), 0.6, None),
+    ("PERSON", re.compile(rf"(?:(?m:^)|:\s|\|\s|\t)[ ]*(?P<v>(?!(?:Herrn?|Frau|Hr|Fr)\b){NAME_TOKEN} (?!M\.|N\.|V\.|A\.)[{UC}]\.)(?=\s|$)"), 0.6, None),
     # signature block: name line followed by a role line
     ("PERSON", re.compile(rf"(?m)^(?P<v>(?:{INITIALS})?{NAME_TOKEN}(?:[ ]{NAME_TOKEN}){{1,2}})[ \t]*\n(?:{ROLE_LINE})"), 0.8, None),
     ("PERSON", re.compile(rf"(?m)^(?P<v>{NAME_TOKEN}(?:[ ]{NAME_TOKEN}){{1,2}})[ ]*$(?![\s\S])"), 0.6, None),

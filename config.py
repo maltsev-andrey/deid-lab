@@ -94,6 +94,14 @@ AFP_FILLER       = "X"
 AFP_SYMBOL_FONTS = ()        # local font ids whose text is barcode/OMR glyphs, e.g. (7,) ; blanked with spaces
 AFP_ZONES        = []        # [(x0, y0, x1, y1), ...] in 1/1440 inch, masked unconditionally (recipient window)
 AFP_MASK_TAGS    = True      # TLE / BNG / ENG / NOP
+# Fonts the synthetic demo (scripts/20_afp_demo.py) references: {local id: (code page, character set)}.
+# IBM 240/300-dpi compatibility names; pick ones that exist in the viewer's resource library.
+# Override per run: DEID_AFP_DEMO_FONTS="T1V10500:C0H200A0,T1V10500:C0H400A0"  (id 1 body, id 2 title)
+AFP_DEMO_FONTS = {1: ("T1001140", "C0H200A0"),    # code page 1140 (EBCDIC 037 + euro), Helvetica 10
+                  2: ("T1001140", "C0H400A0")}    # Helvetica bold 10 (C0H400D0, bold 14, is often missing)
+# The demo text is encoded in the Python codec that matches the code page name (deidlab.afp.CODEPAGE_NAMES).
+if os.environ.get("DEID_AFP_DEMO_FONTS"):
+    AFP_DEMO_FONTS = {i + 1: tuple(p.split(":")) for i, p in enumerate(os.environ["DEID_AFP_DEMO_FONTS"].split(","))}
 
 # NER utility filter profile for the *_pp pipelines (deidlab/postprocess.py):
 #   "clinical"  for medical letters: also drops uncorroborated single-token names and

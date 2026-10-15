@@ -19,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import config as cfg
-from deidlab.afp import AfpWriter, layout_text, mask_document, read_text
+from deidlab.afp import CODEPAGE_NAMES, AfpWriter, layout_text, mask_document, read_text
 from deidlab.afp_render import measure_factory, render, side_by_side
 from deidlab.pipelines import build, merge
 
@@ -40,7 +40,7 @@ def first(d, label):
 
 
 # --- build the print stream ----------------------------------------------------
-w = AfpWriter("DEIDDEMO")
+w = AfpWriter("DEIDDEMO", codepage=CODEPAGE_NAMES.get(cfg.AFP_DEMO_FONTS[1][0], "cp500"), fonts=cfg.AFP_DEMO_FONTS)
 measure = measure_factory(w.fonts)
 for n, d in enumerate(picked, 1):
     pid = first(d, "PATIENT_ID") or f"{n:08d}"

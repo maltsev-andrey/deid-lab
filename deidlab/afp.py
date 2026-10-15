@@ -133,6 +133,8 @@ def _ptx_sequences(payload):
 CODEPAGE_NAMES = {   # IBM code page names seen in MCF -> Python codec
     "T1V10500": "cp500", "T1V10037": "cp037", "T1V11141": "cp1141", "T1V10273": "cp273",
     "T1X00500": "cp500", "T1XFACT0": "cp500",
+    "T1001140": "cp1140", "T1000500": "cp500", "T1000037": "cp037", "T1001141": "cp1141",
+    "T1001148": "cp1148", "T1000273": "cp273", "T1001047": "cp1047",
 }
 
 

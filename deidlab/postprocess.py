@@ -22,8 +22,19 @@ DENY = {
     "consœur", "consoeur", "confrère", "collègues", "chers collègues", "chère consœur",
     "collega", "colleghi", "gentile collega", "cari colleghi",
     # titles that NER tags as a person on their own
-    "dr", "dr.", "dott", "dott.", "prof", "prof.", "med", "med.",
+    "dr", "dr.", "dott", "dott.", "prof", "prof.", "med", "med.", "dr. med", "dr med", "univ-prof. dr. med",
+    "univ.-prof. dr. med", "prof. dr. med", "oa", "oä", "oberarzt", "oberärztin", "chefarzt", "chefärztin",
+    "direktor", "mag", "pd dr",
+    # generic persons and salutation forms
+    "herrn", "herr", "frau", "der", "die", "das", "pat", "patient", "patientin", "patienten", "mädchen", "junge",
+    "der patient", "der patient selbst", "die patientin",
 }
+
+# A PERSON span that names a role or a relative is not a name
+KINSHIP = {"patient", "patientin", "patienten", "mutter", "vater", "tochter", "sohn", "ehemann", "ehefrau",
+           "großmutter", "grossmutter", "großvater", "grossvater", "junge", "mädchen", "kind", "kinder", "bruder",
+           "schwester", "eltern", "partner", "partnerin", "selbst", "bzw", "und"}
+TITLE_BEFORE_RX = re.compile(r"(?:\b(?:Dr|Prof|Herrn?|Frau|OA|OÄ|PD|med|Dres?|Doz|Ass|Mag|Dipl)\.?|\bmult\.|\bmed\.)\s*$")
 
 
 def deny_filter(text, spans):
@@ -46,6 +57,24 @@ LOC_PREP_RX = re.compile(
     r"(?:\b(?:in|aus|nach|bei|von|zu|über|Richtung|wohnhaft|Herkunft|Ort|Wohnort|"      # DE
     r"à|de|en|vers|chez|depuis|habite|domicilié[e]?|ville|"                              # FR
     r"a|da|di|per|presso|in|verso|abita|domiciliat[oa]|città)\s*:?\s*|[,(]\s*)$", re.I)  # IT
+
+
+ORG_GENERIC = {"für", "und", "der", "die", "des", "unserer", "unseres", "unsere", "unser", "im", "am", "zum",
+               "zur", "in", "von", "am", "neurolog", "örtliches", "unf", "chir", "kh", "universitäts"}
+
+
+def _proper_org_token(token: str) -> bool:
+    """A token that can carry an institution's identity: capitalised, not an org keyword,
+    not a department/discipline word, not an adjective ending, not a stop word."""
+    t = token.strip(".,;:()").lower()
+    if len(t) < 3 or t in ORG_GENERIC or not token[0].isupper() or token.isupper() and len(token) <= 3:
+        return False
+    if ORG_WORDS_RX.search(t) or _is_medical(t):
+        return False
+    if t.endswith(("ischen", "ische", "ischer", "isches", "logie", "ologie", "urgie", "iatrie", "medizin",
+                   "zentrum", "zentrums", "stelle", "abteilung", "station", "ambulanz", "praxis")):
+        return False
+    return True
 
 
 def _is_medical(token: str) -> bool:
@@ -96,11 +125,20 @@ def utility_filter(text, spans, profile=None):
             continue
         if s.label != "PERSON" and any(_is_medical(t) for t in toks) and len(toks) <= 2:   # "Stadium IV"
             continue
-        if s.label == "PERSON" and (_is_medical(toks[-1]) or re.match(r"^(?:M\.|Morbus)\s", v)):
-            continue                                                # "Fortbestehender Nikotinabusus", "M. Parkinson"
+        titled = bool(TITLE_BEFORE_RX.search(text[max(0, s.start - 24):s.start]))
+        if s.label == "PERSON" and re.match(r"^(?:M\.|Morbus)\s", v):
+            continue                                                # "M. Parkinson"
+        if s.label == "PERSON" and _is_medical(toks[-1]) and not titled:
+            continue                                                # "Fortbestehender Nikotinabusus"; "Dr. Heinz Hals" stays
+        if s.label == "PERSON" and (any(t.lower().strip(".,") in KINSHIP for t in toks) or any(c.isdigit() for c in v)):
+            continue                                                # "Mutter bzw. Großmutter", "6-jähriger Junge"
         if s.label == "ORGANIZATION" and not ORG_WORDS_RX.search(v):
             continue
-        if strict and s.label == "PERSON" and len(toks) == 1 and v.lower() not in confident_person_tokens:
+        if s.label == "ORGANIZATION" and not any(_proper_org_token(t) for t in toks):
+            continue                                                # "Klinik", "unserer Klinik", "Klinik für Chirurgie"
+        gliner_confident = s.source == "GLiNERRecognizer" and s.score >= 0.7
+        if strict and s.label == "PERSON" and len(toks) == 1 and v.lower() not in confident_person_tokens \
+                and not gliner_confident and not titled:
             continue
         if strict and s.label == "LOCATION" and len(toks) == 1 \
                 and not LOC_PREP_RX.search(text[max(0, s.start - 14):s.start]):
@@ -159,7 +197,7 @@ def propagate(text, spans):
         elif s.label == "ORGANIZATION":
             targets += [(t, "LOCATION", False) for t in _tokens(value) if t.lower() not in INSTITUTION_WORDS]
         for needle, label, ci in targets:
-            if len(needle) < 3 or (needle, ci) in seen:
+            if len(needle) < 3 or (needle, ci) in seen or _is_medical(needle):
                 continue
             seen.add((needle, ci))
             for a, b in _find_all(text, needle, ci):

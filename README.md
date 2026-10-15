@@ -27,9 +27,11 @@ Numbers from the **independent** benchmark, GraSCCo_PII test half (31 German cli
 Same code on our own synthetic corpus (600 documents, 11 009 spans): A_pp 98.7 %, B_pp 99.9 % recall,
 B_pp precision 94.7 %. The gap between the two corpora is the whole point of this project.
 
-**Stage 2, pipeline C** (GLiNER PII model + rules + post-processing) on the same test half:
-recall strict **95.0 %**, lenient 97.0 %, precision **92.5 %** (47 false positives instead of 147),
-at about 3 s per letter on CPU. Same leak protection as B, three times fewer medical terms removed.
+**Stage 2, pipeline C** (GLiNER PII model + rules + post-processing) on the same test half,
+after one tuning round on the dev half: recall strict **96.5 %**, lenient 97.3 %, precision
+**95.1 %** (30 false positives instead of 147), at about 3 s per letter on CPU. Better leak
+protection than B and five times fewer medical terms removed by mistake. The same tuning lifted
+A_pp to 92.5 % / 96.3 % and B_pp to 95.4 % / 81.4 %.
 
 ## Table of contents
 
@@ -315,6 +317,6 @@ deid-lab/
 
 - **Optimistic bias on synthetic data.** Quote GraSCCo test numbers. GraSCCo is itself synthetic and German; Swiss client documents will differ again, so a client sample set is the next benchmark.
 - **B precision.** 79 % on GraSCCo test. The remaining false positives are propagated organ-surnames (`Leber`, `Hals`) and NER phrases with adjectives; a transformer PII model (pipeline C) should replace most of the hand-made filter.
-- **Pipeline C.** GraSCCo test: 95.0 % recall / 92.5 % precision versus 94.1 % / 79.9 % for B_pp, at 16x the CPU time (3 s per letter). The post-processing filter was tuned on spaCy's mistakes and now drops some correct GLiNER names (raw C: 96.3 % recall); relaxing it for GLiNER spans is the next tuning step. **D** (B + C union) adds 0.7 points recall and brings back all of B's false positives (78 % precision): not worth it, kept as an option only.
+- **Pipeline C.** GraSCCo test: 96.5 % recall / 95.1 % precision versus 95.4 % / 81.4 % for B_pp, at 16x the CPU time (3 s per letter with 24 threads; 4 threads take 5.5 s but a third of the core-seconds, so production runs a pool of 4-thread processes). Remaining misses: ward designations annotated as IDs, partial date ranges (`2. bis 7.10.2021`), a month name without a year. **D** (B + C union) adds nothing C does not find and brings back B's false positives: kept as an option only.
 - **File formats.** Plain text and AFP text layer. Next: DOCX, text PDF, scanned PDF with OCR, AFP images and barcode fonts.
 - **Real formats.** PID and case-number patterns must be collected from real client samples before any production use.

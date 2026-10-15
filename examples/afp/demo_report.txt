@@ -1,6 +1,6 @@
-pipeline A_regex_pp, codepage cp500, pages 3, text fragments 347
+pipeline A_regex_pp, codepage cp1140, pages 3, text fragments 347
 bytes masked: text 800, tags (TLE/BNG/ENG/NOP) 147
-file size before/after: 7710 / 7710
+file size before/after: 7638 / 7638
 
 spans found:
   ORGANIZATION    Kantonsspital Baden
@@ -22,7 +22,8 @@ spans found:
   DATE            11.03.2026
   PERSON          Schwab
   DATE            2026
-  PERSON          Kristina Tanner
+  PERSON          Kristina
+  PERSON          Tanner
   PERSON          Leticia Aebi
   DATE            09.03.2026
   PERSON          Kristina Tanner
